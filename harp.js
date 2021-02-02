@@ -1,4 +1,5 @@
 var lines = [];
+var ripples = [];
 
 var auto_sound_loop;
 
@@ -46,24 +47,43 @@ function draw(){
 
     if (lines.length){
         for (var i=0; i<lines.length; i++) {
+
+            var cur_line = lines[i];
             // console.log(lines[i].opacity);
             stroke('rgba(' +red_perc +'%, ' +green_perc+ '%, '+ blue_perc+'%,' + lines[i].opacity+')');
             strokeWeight(lines[i].weight);
-            line(x1=lines[i].x1, y1=lines[i].y1, x2=lines[i].x2, y2=lines[i].y2 );
+            line(x1=lines[i].x1, y1=lines[i].y1, x2=lines[i].x2, y2=lines[i].y2);
+            
+            if (lines[i].ripple){
+              var cur_ripple = lines[i].ripple;
+              strokeWeight(cur_ripple.weight);
+              ellipse(cur_ripple.x, cur_ripple.y, cur_ripple.radius)
+              cur_ripple.radius += 1;
+              
+            }
+            
             lines[i].fade();
 
             // TODO: slow down the volume changes
             var new_vol = lines[i].opacity * lines[i].vol_ratio;
             lines[i].synth.amp(vol=new_vol, rampTime=0.05);
             
-            }
-            for (var i=0; i<lines.length; i++) {
-                if (lines[i].opacity < 0.05) {
-                    console.log('removing ' + i + ' from ' + lines.length);
-                    lines[i].synth.triggerRelease();
-                    lines.splice(i, 1);
-                }
-            }
+          } 
+          for (var i=0; i<lines.length; i++) {
+              if (lines[i].opacity < 0.05) {
+                  console.log('removing ' + i + ' from ' + lines.length);
+                  lines[i].synth.triggerRelease();
+                  var old_line = lines[i];
+                  
+                  lines.splice(i, 1);
+
+                  var old_ripple_index = ripples.indexOf(old_line.ripple);
+                  ripples.splice(old_ripple_index, 1);
+
+              }
+          }
+
+
     }
 }
 
@@ -150,6 +170,9 @@ function perp_line(x1, y1, x2, y2){
   
     if (dist_new == 0){
       new_line.vol_ratio = 0.3;
+      new_ripple = new Ripple(x1, y1);
+      ripples.push(new_ripple);
+      new_line.ripple = new_ripple;
     }
   
     lines.push(new_line);
@@ -165,6 +188,7 @@ function perp_line(x1, y1, x2, y2){
     this.vol_ratio = Math.min(weight / max_weight, 1.0);
     this.opacity = 1;
     this.synth = new p5.MonoSynth();
+    this.ripple = null;
     // this.synth.setADSR(attackTime=0.21, decayTime=3.0, susRatio=0.01, releaseTime=0);
   }
   
@@ -181,6 +205,22 @@ function play_line(x1, y1, x2, y2){
     // amp controls volume in this case, not the velocity
     new_line.synth.amp(new_line.vol_ratio);
     new_line.synth.triggerAttack(note=new_freq, velocity=1);
+}
+
+function Ripple(x, y, weight=20) {
+  this.x = x;
+  this.y = y;
+  this.radius = 4;
+  this.weight = weight;
+}
+
+function play_line(x1, y1, x2, y2){
+  var new_ratio = pent_ratios[Math.floor(Math.random() * pent_ratios.length)];
+  var new_freq = new_ratio * base_freq;
+  var new_line = perp_line(x1=x1, y1=y1, x2=x2, y2=y2);
+  // amp controls volume in this case, not the velocity
+  new_line.synth.amp(new_line.vol_ratio);
+  new_line.synth.triggerAttack(note=new_freq, velocity=1);
 }
 
 function mousePressed() {
