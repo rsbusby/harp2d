@@ -1,3 +1,4 @@
+var canvas;
 var lines = [];
 var ripples = [];
 
@@ -14,11 +15,15 @@ var mouse_release_y;
 var red_perc;
 var green_perc;
 var blue_perc;
+var cur_color_prefix;
 
 var base_freq;
 var cur_freq;
 
 var loop_pedal = false;
+
+var auto_button;
+var reload_button;
 
 // Pentatonic scale ratios
 var pent_ratios = [5/4, 9/8, 3/2, 5/3, 2, 1];
@@ -33,6 +38,32 @@ function reset_page(){
      green_perc = random() * 100;
      blue_perc = random() * 100;
  
+     cur_color_prefix = 'rgba(' +red_perc +'%, ' +green_perc+ '%, '+ blue_perc+'%, '
+
+     console.log(cur_color_prefix);
+     let button_color = cur_color_prefix+'0.7' + ')' ;
+     console.log(button_color);
+     
+     reload_button.style('background-color', color(button_color));
+     reload_button.style('border-color', color('grey'));
+     reload_button.style('border-radius', '20px');
+     reload_button.style('border-width', '4px');
+
+     auto_button.style('background-color', color(button_color));
+     auto_button.style('border-color', color('grey'));
+     auto_button.style('border-radius', '20px');
+     auto_button.style('border-width', '4px');
+
+     console.log(red_perc + green_perc + blue_perc);
+     if (red_perc + green_perc + blue_perc < 200){
+       auto_button.style('color', '#ffffff');
+       reload_button.style('color', '#ffffff');
+     }
+     else{
+      auto_button.style('color', '#000000');
+      reload_button.style('color', '#000000');
+     }
+
      auto_sound_loop.isPlaying = false;
 
      for (var i=0; i<lines.length; i++) {
@@ -45,21 +76,31 @@ function reset_page(){
 }
 
 function setup(){
-    createCanvas(window.innerWidth, window.innerHeight);
+    canvas = createCanvas(window.innerWidth, window.innerHeight);
+    canvas.mouseReleased(canvasReleased);
+
     colorMode(HSB, 255);
     frameRate(10);
 
     auto_sound_loop = new p5.SoundLoop(run_sound_loop, 2.3);
 
-    reset_page();
-
+    textSize(24);
     auto_button = createButton('Auto');
     auto_button.mouseClicked(auto_button_clicked);
     auto_button.position(20, 200);
+    auto_button.size(200, 60);
+    auto_button.style('font-size', 20);
 
-    auto_button = createButton('Reload');
-    auto_button.mouseClicked(reload_button_clicked);
-    auto_button.position(20, 100);
+    // auto_button.fontSize(20);
+
+    reload_button = createButton('Reload');
+    reload_button.mouseClicked(reload_button_clicked);
+    reload_button.position(20, 100);
+    reload_button.size(200, 60);
+    reload_button.style('font-size', 20);
+    // reload_button.style('text-shadow', '1px 1px #ffffff')
+    
+    reset_page();
 
 }
 
@@ -121,9 +162,11 @@ function draw(){
 function auto_button_clicked(){
 
     if (auto_sound_loop.isPlaying){
+        // reset_page();
         auto_sound_loop.stop();
     }
     else{
+        // reset_page();
         auto_sound_loop.start();
     }
 
@@ -147,7 +190,7 @@ function run_sound_loop(){
         play_line(x1=x1new, y1=y1new, x2=x2new, y2=y2new);
     
         if (random() < 0.34){
-          sloop.interval = random() * 2 + 0.2;
+          auto_sound_loop.interval = random() * 2 + 0.2;
        }
     
       }
@@ -271,7 +314,11 @@ function mousePressed() {
     
 }
 
-function mouseReleased() {
+function canvasReleased() {
+
+  // if (auto_button.mouseReleased() ){
+  //    return;
+  // }
 
   mouse_release_x = mouseX;
   mouse_release_y = mouseY;
