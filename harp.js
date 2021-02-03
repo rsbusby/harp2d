@@ -181,16 +181,29 @@ function run_sound_loop(){
 
     if (auto_sound_loop.isPlaying){
 
-        var x1new = floor(random() * window.innerWidth);
-        var x2new = floor(random() * window.innerWidth);
+        let x1new = floor(random() * window.innerWidth);
     
-        var y1new = floor(random() * window.innerHeight);
-        var y2new = floor(random() * window.innerHeight);
+        let y1new = floor(random() * window.innerHeight);
+
+        let x2new;
+        let y2new;
+
+        let delta = 20;
+
+        if (random() < 0.64) {
+          x2new = x1new;
+          y2new = y1new;
+        }
+        else{
+          x2new = x1new - delta + floor(random() * delta * 2);
+          y2new = y1new - delta + floor(random() * delta * 2);
+        }
     
         play_line(x1=x1new, y1=y1new, x2=x2new, y2=y2new);
     
-        if (random() < 0.34){
-          auto_sound_loop.interval = random() * 2 + 0.2;
+        if (random() < auto_sound_loop.interval / 4){
+          auto_sound_loop.interval = random() * 5 + 0.2;
+          console.log("interval: " + auto_sound_loop.interval);
        }
     
       }
@@ -247,11 +260,17 @@ function perp_line(x1, y1, x2, y2){
     
     var new_line = new Liney(x1=x_left, y1=y_up, x2=x_right, y2=y_down, weight=weight);
   
+
+
     if (dist_new == 0){
+      new_line.freq_fac = 1.0;
       new_line.vol_ratio = 0.3;
       new_ripple = new Ripple(x1, y1);
       ripples.push(new_ripple);
       new_line.ripple = new_ripple;
+    }
+    else{
+      new_line.freq_fac = 2.0;
     }
   
     lines.push(new_line);
@@ -268,6 +287,7 @@ function perp_line(x1, y1, x2, y2){
     this.opacity = 1;
     this.synth = new p5.MonoSynth();
     this.ripple = null;
+    this.freq_fac = 1.0;
     // this.synth.setADSR(attackTime=0.21, decayTime=3.0, susRatio=0.01, releaseTime=0);
   }
   
@@ -278,9 +298,15 @@ Liney.prototype.fade = function() {
   }
   
 function play_line(x1, y1, x2, y2){
+
+    console.log("test")
+
     var new_ratio = pent_ratios[Math.floor(Math.random() * pent_ratios.length)];
-    var new_freq = new_ratio * base_freq;
     var new_line = perp_line(x1=x1, y1=y1, x2=x2, y2=y2);
+    var new_freq = new_ratio * base_freq * new_line.freq_fac;
+
+    console.log("Base: " + base_freq + "   new: " + new_freq +"   " + new_line.freq_fac);
+
     // amp controls volume in this case, not the velocity
     new_line.synth.amp(new_line.vol_ratio);
     new_line.synth.triggerAttack(note=new_freq, velocity=1);
@@ -293,14 +319,6 @@ function Ripple(x, y, weight=20) {
   this.weight = weight;
 }
 
-function play_line(x1, y1, x2, y2){
-  var new_ratio = pent_ratios[Math.floor(Math.random() * pent_ratios.length)];
-  var new_freq = new_ratio * base_freq;
-  var new_line = perp_line(x1=x1, y1=y1, x2=x2, y2=y2);
-  // amp controls volume in this case, not the velocity
-  new_line.synth.amp(new_line.vol_ratio);
-  new_line.synth.triggerAttack(note=new_freq, velocity=1);
-}
 
 function mousePressed() {
   
@@ -323,7 +341,7 @@ function canvasReleased() {
   mouse_release_x = mouseX;
   mouse_release_y = mouseY;
 
-  // console.log("coords released: " + mouseX + "  " + mouseY);
+  console.log("coords released: " + mouseX + "  " + mouseY);
 
   play_line(x1=mouse_press_x, y1=mouse_press_y, x2=mouse_release_x, y2=mouse_release_y);
 
