@@ -18,32 +18,59 @@ var blue_perc;
 var base_freq;
 var cur_freq;
 
+var loop_pedal = false;
+
 // Pentatonic scale ratios
 var pent_ratios = [5/4, 9/8, 3/2, 5/3, 2, 1];
+
+function reset_page(){
+
+     // pick a random 'key'
+     base_freq = random() * 200 + 60;
+
+     // pick a random color
+     red_perc = random() * 100;
+     green_perc = random() * 100;
+     blue_perc = random() * 100;
+ 
+     auto_sound_loop.isPlaying = false;
+
+     for (var i=0; i<lines.length; i++) {
+       lines[i].synth.triggerRelease();
+     }
+
+     lines = [];
+     ripples = [];
+
+}
 
 function setup(){
     createCanvas(window.innerWidth, window.innerHeight);
     colorMode(HSB, 255);
     frameRate(10);
 
-    // pick a random 'key'
-    base_freq = random() * 200 + 60;
-
-    // pick a random color
-    red_perc = random() * 100;
-    green_perc = random() * 100;
-    blue_perc = random() * 100;
-
     auto_sound_loop = new p5.SoundLoop(run_sound_loop, 2.3);
+
+    reset_page();
 
     auto_button = createButton('Auto');
     auto_button.mouseClicked(auto_button_clicked);
     auto_button.position(20, 200);
+
+    auto_button = createButton('Reload');
+    auto_button.mouseClicked(reload_button_clicked);
+    auto_button.position(20, 100);
+
 }
 
 function draw(){
 
-    background(10);
+    background(16);
+
+
+    if (loop_pedal) {
+      circle(50, 140, 80);
+    }
 
     if (lines.length){
         for (var i=0; i<lines.length; i++) {
@@ -55,7 +82,7 @@ function draw(){
             line(x1=lines[i].x1, y1=lines[i].y1, x2=lines[i].x2, y2=lines[i].y2);
             
             if (lines[i].ripple){
-              
+
               var cur_ripple = lines[i].ripple;
 
               // width of ripple line
@@ -101,6 +128,11 @@ function auto_button_clicked(){
     }
 
 }
+
+function reload_button_clicked(){
+  reset_page();
+}
+
 
 function run_sound_loop(){
 
@@ -248,4 +280,16 @@ function mouseReleased() {
 
   play_line(x1=mouse_press_x, y1=mouse_press_y, x2=mouse_release_x, y2=mouse_release_y);
 
+}
+
+function keyPressed() {
+  if (keyCode === 32) {
+    loop_pedal = true;
+  }
+}
+
+function keyReleased() {
+  if (keyCode === 32) {
+    loop_pedal =false;
+  }
 }
