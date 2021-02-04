@@ -24,6 +24,7 @@ var loop_pedal = false;
 
 var auto_button;
 var reload_button;
+var instructions_opacity = 244;
 
 // Pentatonic scale ratios
 var pent_ratios = [5/4, 9/8, 3/2, 5/3, 2, 1];
@@ -64,7 +65,9 @@ function reset_page(){
       reload_button.style('color', '#000000');
      }
 
+     auto_button.html("Auto Chime");
      auto_sound_loop.isPlaying = false;
+     auto_sound_loop.interval = random() * 1.8 + 0.2;
 
      for (var i=0; i<lines.length; i++) {
        lines[i].synth.triggerRelease();
@@ -72,6 +75,8 @@ function reset_page(){
 
      lines = [];
      ripples = [];
+     instructions_opacity = 255;
+     strokeWeight(2);
 
 }
 
@@ -82,10 +87,10 @@ function setup(){
     colorMode(HSB, 255);
     frameRate(10);
 
-    auto_sound_loop = new p5.SoundLoop(run_sound_loop, 2.3);
+    auto_sound_loop = new p5.SoundLoop(run_sound_loop, 0.8);
 
     textSize(24);
-    auto_button = createButton('Auto');
+    auto_button = createButton('Auto Chime');
     auto_button.mouseClicked(auto_button_clicked);
     auto_button.position(20, 200);
     auto_button.size(200, 60);
@@ -93,13 +98,14 @@ function setup(){
 
     // auto_button.fontSize(20);
 
-    reload_button = createButton('Reload');
+    reload_button = createButton('Reload for new color');
     reload_button.mouseClicked(reload_button_clicked);
     reload_button.position(20, 100);
     reload_button.size(200, 60);
     reload_button.style('font-size', 20);
     // reload_button.style('text-shadow', '1px 1px #ffffff')
-    
+
+
     reset_page();
 
 }
@@ -108,10 +114,21 @@ function draw(){
 
     background(16);
 
-
-    if (loop_pedal) {
-      circle(50, 140, 80);
+    if ( lines.length ){
+      instructions_opacity -= 2;
     }
+
+    if (instructions_opacity > 2){
+
+      textSize(32);
+      fill(0, 102, 153, instructions_opacity);
+      text('2D Chimes:  2 ways 2 create sounds. 1. Click, drag release.  2.  Just click', 10, 60);
+
+    }
+
+    // if (loop_pedal) {
+    //   circle(50, 140, 80);
+    // }
 
     if (lines.length){
         for (var i=0; i<lines.length; i++) {
@@ -119,7 +136,11 @@ function draw(){
             var cur_line = lines[i];
             // console.log(lines[i].opacity);
             stroke('rgba(' +red_perc +'%, ' +green_perc+ '%, '+ blue_perc+'%,' + lines[i].opacity+')');
-            strokeWeight(lines[i].weight);
+            
+            // reduce line width over time
+            let line_width_fac = Math.min(lines[i].opacity * 1.25, 1.0);
+
+            strokeWeight(lines[i].weight * line_width_fac);
             line(x1=lines[i].x1, y1=lines[i].y1, x2=lines[i].x2, y2=lines[i].y2);
             
             if (lines[i].ripple){
@@ -164,10 +185,12 @@ function auto_button_clicked(){
     if (auto_sound_loop.isPlaying){
         // reset_page();
         auto_sound_loop.stop();
+        auto_button.html("Auto Chime OFF");
     }
     else{
         // reset_page();
         auto_sound_loop.start();
+        auto_button.html("Auto Chime ON");
     }
 
 }
@@ -188,9 +211,9 @@ function run_sound_loop(){
         let x2new;
         let y2new;
 
-        let delta = 20;
+        let delta = 70;
 
-        if (random() < 0.64) {
+        if (random() < 0.60) {
           x2new = x1new;
           y2new = y1new;
         }
