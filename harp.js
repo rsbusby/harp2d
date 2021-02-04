@@ -78,6 +78,9 @@ function reset_page(){
      instructions_opacity = 255;
      strokeWeight(2);
 
+     mouse_press_x = null;
+     mouse_release_x = null;
+
 }
 
 function setup(){
@@ -110,6 +113,19 @@ function setup(){
 
 }
 
+
+function draw_bez(x_left, y_up, mouse_press_x, mouse_press_y, x2, y2){
+
+  let dist_fac1 = 0.6
+  let dist_fac2 = 1 / 6;
+
+  bezier(x_left, y_up,
+         mouse_press_x - (mouse_press_x - x_left) * dist_fac1, mouse_press_y - (mouse_press_y - y_up) * dist_fac1,  
+         x2 - (mouse_press_x - x_left) * dist_fac2, y2 - (mouse_press_y - y_up) * dist_fac2, 
+         x2, y2
+         );
+}
+
 function draw(){
 
     background(16);
@@ -126,9 +142,46 @@ function draw(){
 
     }
 
+
+
     // if (loop_pedal) {
     //   circle(50, 140, 80);
     // }
+
+    if (mouse_press_x != null & mouse_release_x == null){
+
+      let x_left, x_right, y_up, y_down, weight, dist_new;
+
+      [x_left, y_up, x_right, y_down, weight, dist_new] = get_perp_line(x1=mouse_press_x, mouse_press_y, mouseX, mouseY);
+
+      noFill();
+      strokeWeight(3);
+      console.log("wd: "+ weight + "  " + dist_new);
+
+      stroke('rgba(' +red_perc +'%, ' +green_perc+ '%, '+ blue_perc+'%,' + Math.min(weight / 70, 0.2) +')');
+  
+      // console.log(x_left + " " +y_up + "  " + x_right + " " +y_down );
+
+
+      draw_bez(x_left, y_up, mouse_press_x, mouse_press_y, mouseX, mouseY);
+      draw_bez(x_right, y_down, mouse_press_x, mouse_press_y, mouseX, mouseY);
+
+      // draw_bez(mouseX, mouseY, mouse_press_x, mouse_press_y, x_right, y_down);
+
+      // bezier(x_left, y_up,
+      //   mouse_press_x - (mouse_press_x - x_left) / 2, mouse_press_y - (mouse_press_y - y_up) / 2,  
+      //   mouse_press_x - (mouse_press_x - x_left) / 4, mouse_press_y - (mouse_press_y - y_up) / 4, 
+      //   mouseX, mouseY);
+
+      // bezier(mouseX, y_up,
+      //   mouse_press_x - (mouse_press_x - x_left) / 2, mouse_press_y - (mouse_press_y - y_up) / 2,  
+      //   mouse_press_x - (mouse_press_x - x_left) / 4, mouse_press_y - (mouse_press_y - y_up) / 4, 
+      //   mouseX, mouseY);
+      // bezier(x_left, y_up, x_left, y_up, x_right, y_down, x_right + 500, y_down);
+
+      // curve(x_left, y_up,x_left, y_up, x_right, y_down, x_right + 500, y_down);
+
+    }
 
     if (lines.length){
         for (var i=0; i<lines.length; i++) {
@@ -232,55 +285,110 @@ function run_sound_loop(){
       }
 }
 
+function get_perp_line(x1, y1, x2, y2){
+  var dist_new = dist(x1, y1, x2, y2);
+  
+  if (dist_new == 0){
+    weight = 0;
+  }
+  else{
+      weight = 1 + dist_new * 0.1;
+  }
+
+  var slope = (y2 - y1) / (x2 - x1);
+  var slope_perp = - 1/slope;
+
+  if (dist_new == 0){
+    var x_left = x1;
+    var x_right = x1;
+    var y_up = y1 - 1;
+    var y_down = y1;
+  }
+  else if (slope_perp >  0){
+    var y_left_delta = - slope_perp * x1;  
+    var y_right_delta = slope_perp * (window.innerWidth - x1);
+
+    var x_up_delta =  (window.innerHeight - y1) / slope_perp;
+    var x_down_delta = (y1) / slope_perp;
+
+    var x_left = Math.max(0, x1 - x_down_delta);
+    var x_right = Math.min(window.innerWidth, x_up_delta + x1);
+
+    var y_up = Math.max(y1 + y_left_delta, 0);
+    var y_down = Math.min(window.innerHeight, y_right_delta + y1);
+  }
+  else{
+    var y_left_delta = - slope_perp * x1;  
+    var y_right_delta = slope_perp * (window.innerWidth - x1);
+
+    var x_down_delta =  (window.innerHeight - y1) / slope_perp;
+    var x_up_delta = (y1) / slope_perp;
+
+    var x_left = Math.max(0, x1 + x_down_delta);
+    var x_right = Math.min(window.innerWidth, x1 - x_up_delta);
+
+    var y_down = Math.max(y1 + y_right_delta, 0);
+    var y_up = Math.min(window.innerHeight, y_left_delta + y1);
+  }
+  
+  return [x_left, y_up, x_right, y_down, weight, dist_new];
+
+}
+
 function perp_line(x1, y1, x2, y2){
     // get the line perpendicular to the mouse-drag
     // the slope will be the negative opposite of the original line.
     
-    var dist_new = dist(x1, y1, x2, y2);
+    // var dist_new = dist(x1, y1, x2, y2);
   
-    if (dist_new == 0){
-      weight = 0;
-    }
-    else{
-       weight = 1 + dist_new * 0.1;
-    }
+    // if (dist_new == 0){
+    //   weight = 0;
+    // }
+    // else{
+    //    weight = 1 + dist_new * 0.1;
+    // }
   
-    var slope = (y2 - y1) / (x2 - x1);
-    var slope_perp = - 1/slope;
+    // var slope = (y2 - y1) / (x2 - x1);
+    // var slope_perp = - 1/slope;
   
-    if (dist_new == 0){
-      var x_left = x1;
-      var x_right = x1;
-      var y_up = y1 - 1;
-      var y_down = y1;
-    }
-    else if (slope_perp >  0){
-      var y_left_delta = - slope_perp * x1;  
-      var y_right_delta = slope_perp * (window.innerWidth - x1);
+    // if (dist_new == 0){
+    //   var x_left = x1;
+    //   var x_right = x1;
+    //   var y_up = y1 - 1;
+    //   var y_down = y1;
+    // }
+    // else if (slope_perp >  0){
+    //   var y_left_delta = - slope_perp * x1;  
+    //   var y_right_delta = slope_perp * (window.innerWidth - x1);
   
-      var x_up_delta =  (window.innerHeight - y1) / slope_perp;
-      var x_down_delta = (y1) / slope_perp;
+    //   var x_up_delta =  (window.innerHeight - y1) / slope_perp;
+    //   var x_down_delta = (y1) / slope_perp;
   
-      var x_left = Math.max(0, x1 - x_down_delta);
-      var x_right = Math.min(window.innerWidth, x_up_delta + x1);
+    //   var x_left = Math.max(0, x1 - x_down_delta);
+    //   var x_right = Math.min(window.innerWidth, x_up_delta + x1);
   
-      var y_up = Math.max(y1 + y_left_delta, 0);
-      var y_down = Math.min(window.innerHeight, y_right_delta + y1);
-    }
-    else{
-      var y_left_delta = - slope_perp * x1;  
-      var y_right_delta = slope_perp * (window.innerWidth - x1);
+    //   var y_up = Math.max(y1 + y_left_delta, 0);
+    //   var y_down = Math.min(window.innerHeight, y_right_delta + y1);
+    // }
+    // else{
+    //   var y_left_delta = - slope_perp * x1;  
+    //   var y_right_delta = slope_perp * (window.innerWidth - x1);
   
-      var x_down_delta =  (window.innerHeight - y1) / slope_perp;
-      var x_up_delta = (y1) / slope_perp;
+    //   var x_down_delta =  (window.innerHeight - y1) / slope_perp;
+    //   var x_up_delta = (y1) / slope_perp;
   
-      var x_left = Math.max(0, x1 + x_down_delta);
-      var x_right = Math.min(window.innerWidth, x1 - x_up_delta);
+    //   var x_left = Math.max(0, x1 + x_down_delta);
+    //   var x_right = Math.min(window.innerWidth, x1 - x_up_delta);
   
-      var y_down = Math.max(y1 + y_right_delta, 0);
-      var y_up = Math.min(window.innerHeight, y_left_delta + y1);
-    }
-    
+    //   var y_down = Math.max(y1 + y_right_delta, 0);
+    //   var y_up = Math.min(window.innerHeight, y_left_delta + y1);
+    // }
+    let x_left, x_right, y_up, y_down, weight, dist_new;
+  
+    [x_left, y_up, x_right, y_down, weight, dist_new] = get_perp_line(x1, y1, x2, y2);
+
+    console.log('x_left: ' + x_left);
+
     var new_line = new Liney(x1=x_left, y1=y_up, x2=x_right, y2=y_down, weight=weight);
   
 
