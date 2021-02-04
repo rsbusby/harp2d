@@ -9,6 +9,9 @@ var max_weight = 40;
 var mouse_press_x;
 var mouse_press_y;
 
+var mouse_drag_x;
+var mouse_drag_y;
+
 var mouse_release_x;
 var mouse_release_y;
 
@@ -65,7 +68,7 @@ function reset_page(){
       reload_button.style('color', '#000000');
      }
 
-     auto_button.html("Auto Chime");
+     auto_button.html("AutoPlay");
      auto_sound_loop.isPlaying = false;
      auto_sound_loop.interval = random() * 1.8 + 0.2;
 
@@ -85,6 +88,7 @@ function reset_page(){
 
 function setup(){
     canvas = createCanvas(window.innerWidth, window.innerHeight);
+    canvas.mousePressed(canvasPressed);
     canvas.mouseReleased(canvasReleased);
 
     colorMode(HSB, 255);
@@ -113,7 +117,6 @@ function setup(){
 
 }
 
-
 function draw_bez(x_left, y_up, mouse_press_x, mouse_press_y, x2, y2){
 
   let dist_fac1 = 0.6
@@ -131,18 +134,16 @@ function draw(){
     background(16);
 
     if ( lines.length ){
-      instructions_opacity -= 2;
+      instructions_opacity -= 4;
     }
 
-    if (instructions_opacity > 2){
+    if (instructions_opacity > 2 ){
 
       textSize(32);
       fill(0, 102, 153, instructions_opacity);
-      text('2D Chimes:  2 ways 2 create sounds. 1. Click, drag release.  2.  Just click', 10, 60);
+      text('Two ways to create sounds.\n1. Click and hold, drag, release.\n2.  Just click', 10, 320);
 
     }
-
-
 
     // if (loop_pedal) {
     //   circle(50, 140, 80);
@@ -152,17 +153,21 @@ function draw(){
 
       let x_left, x_right, y_up, y_down, weight, dist_new;
 
-      [x_left, y_up, x_right, y_down, weight, dist_new] = get_perp_line(x1=mouse_press_x, mouse_press_y, mouseX, mouseY);
+      dist_new = dist(x1=mouse_press_x, mouse_press_y, mouseX, mouseY);
+ 
+      // fix the line angle after the user has 'pulled' a certain distance
+      if (dist_new < 30){
+        mouse_drag_x = mouseX;
+        mouse_drag_y = mouseY;
+       }
+
+      [x_left, y_up, x_right, y_down, weight, dist_new] = get_perp_line(x1=mouse_press_x, mouse_press_y, mouse_drag_x, mouse_drag_y, dist_new);
 
       noFill();
-      strokeWeight(3);
-      console.log("wd: "+ weight + "  " + dist_new);
-
-      stroke('rgba(' +red_perc +'%, ' +green_perc+ '%, '+ blue_perc+'%,' + Math.min(weight / 70, 0.2) +')');
+      strokeWeight(4);
+      let cur_weight = 1 + dist_new * 0.1;
+      stroke('rgba(' +red_perc +'%, ' +green_perc+ '%, '+ blue_perc+'%,' + Math.min(cur_weight / 70, 0.2) +')');
   
-      // console.log(x_left + " " +y_up + "  " + x_right + " " +y_down );
-
-
       draw_bez(x_left, y_up, mouse_press_x, mouse_press_y, mouseX, mouseY);
       draw_bez(x_right, y_down, mouse_press_x, mouse_press_y, mouseX, mouseY);
 
@@ -238,12 +243,12 @@ function auto_button_clicked(){
     if (auto_sound_loop.isPlaying){
         // reset_page();
         auto_sound_loop.stop();
-        auto_button.html("Auto Chime OFF");
+        auto_button.html("AutoPlay OFF");
     }
     else{
         // reset_page();
         auto_sound_loop.start();
-        auto_button.html("Auto Chime ON");
+        auto_button.html("AutoPlay ON");
     }
 
 }
@@ -285,8 +290,9 @@ function run_sound_loop(){
       }
 }
 
-function get_perp_line(x1, y1, x2, y2){
-  var dist_new = dist(x1, y1, x2, y2);
+function get_perp_line(x1, y1, x2, y2, dist_new){
+
+  // var dist_new = dist(x1, y1, x2, y2);
   
   if (dist_new == 0){
     weight = 0;
@@ -335,7 +341,7 @@ function get_perp_line(x1, y1, x2, y2){
 
 }
 
-function perp_line(x1, y1, x2, y2){
+function perp_line(x1, y1, x2, y2, dist_new=null){
     // get the line perpendicular to the mouse-drag
     // the slope will be the negative opposite of the original line.
     
@@ -383,9 +389,13 @@ function perp_line(x1, y1, x2, y2){
     //   var y_down = Math.max(y1 + y_right_delta, 0);
     //   var y_up = Math.min(window.innerHeight, y_left_delta + y1);
     // }
-    let x_left, x_right, y_up, y_down, weight, dist_new;
+    let x_left, x_right, y_up, y_down, weight;
   
-    [x_left, y_up, x_right, y_down, weight, dist_new] = get_perp_line(x1, y1, x2, y2);
+    if (dist_new == null){
+      dist_new = dist(x1, y1, x2, y2);
+    }
+
+    [x_left, y_up, x_right, y_down, weight] = get_perp_line(x1, y1, x2, y2, dist_new);
 
     console.log('x_left: ' + x_left);
 
@@ -428,12 +438,17 @@ Liney.prototype.fade = function() {
     this.opacity = this.opacity * fade_fac;
   }
   
-function play_line(x1, y1, x2, y2){
+function play_line(x1, y1, x2, y2, cur_dist=null){
 
-    console.log("test")
+    // console.log("test")
 
     var new_ratio = pent_ratios[Math.floor(Math.random() * pent_ratios.length)];
-    var new_line = perp_line(x1=x1, y1=y1, x2=x2, y2=y2);
+
+    if (cur_dist == null){
+      cur_dist = dist(x1, y1, x2, y2);
+    }
+
+    var new_line = perp_line(x1=x1, y1=y1, x2=x2, y2=y2, dist_new=cur_dist);
     var new_freq = new_ratio * base_freq * new_line.freq_fac;
 
     console.log("Base: " + base_freq + "   new: " + new_freq +"   " + new_line.freq_fac);
@@ -451,7 +466,7 @@ function Ripple(x, y, weight=20) {
 }
 
 
-function mousePressed() {
+function canvasPressed() {
   
   // console.log("coords pressed: " + mouseX + "  " + mouseY);
 
@@ -472,9 +487,26 @@ function canvasReleased() {
   mouse_release_x = mouseX;
   mouse_release_y = mouseY;
 
-  console.log("coords released: " + mouseX + "  " + mouseY);
+  let x2, y2;
 
-  play_line(x1=mouse_press_x, y1=mouse_press_y, x2=mouse_release_x, y2=mouse_release_y);
+  if (mouse_drag_x == null){
+    x2 = mouseX;
+    y2 = mouseY;
+  }
+  else{
+    x2 = mouse_drag_x;
+    y2 = mouse_drag_y;
+    mouse_drag_x = null;
+    mouse_drag_y = null;
+  }
+
+  // console.log("coords released: " + mouseX + "  " + mouseY);
+
+  let cur_dist = dist(mouse_press_x, mouse_press_y, mouse_release_x, mouse_release_y);
+
+  play_line(x1=mouse_press_x, y1=mouse_press_y, x2=x2, y2=y2, cur_dist=cur_dist);
+
+
 
 }
 
