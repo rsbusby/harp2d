@@ -3,6 +3,7 @@ var lines = [];
 var ripples = [];
 
 var auto_sound_loop;
+var sound_loop_line_to_ripple_ratio = 0.64;
 
 var max_weight = 40;
 
@@ -83,6 +84,7 @@ function reset_page(){
 
      mouse_press_x = null;
      mouse_release_x = null;
+     mouse_drag_x = null;
 
 }
 
@@ -100,15 +102,15 @@ function setup(){
     auto_button = createButton('Auto Chime');
     auto_button.mouseClicked(auto_button_clicked);
     auto_button.position(20, 200);
-    auto_button.size(200, 60);
+    auto_button.size(110, 110);
     auto_button.style('font-size', 20);
 
     // auto_button.fontSize(20);
 
-    reload_button = createButton('Reload for new color');
+    reload_button = createButton('Restart');
     reload_button.mouseClicked(reload_button_clicked);
-    reload_button.position(20, 100);
-    reload_button.size(200, 60);
+    reload_button.position(20, 60);
+    reload_button.size(110, 110);
     reload_button.style('font-size', 20);
     // reload_button.style('text-shadow', '1px 1px #ffffff')
 
@@ -141,7 +143,7 @@ function draw(){
 
       textSize(32);
       fill(0, 102, 153, instructions_opacity);
-      text('Two ways to create sounds.\n1. Click and hold, drag, release.\n2.  Just click', 10, 320);
+      text('Two ways to create sound.\n1. Click and hold, drag, release.\n2.  Just click.\n\nRestart to pick a new random pitch and hue.', 10, 400);
 
     }
 
@@ -156,17 +158,20 @@ function draw(){
       dist_new = dist(x1=mouse_press_x, mouse_press_y, mouseX, mouseY);
  
       // fix the line angle after the user has 'pulled' a certain distance
-      if (dist_new < 30){
+      if ( (dist_new < 60 | mouse_drag_x == null)  & dist_new > 4){
         mouse_drag_x = mouseX;
         mouse_drag_y = mouseY;
        }
+ 
+      //  console.log(mouse_press_x + " " +mouse_press_y +" " + mouse_drag_x + " " +mouse_drag_y+ "     " + dist_new);
 
-      [x_left, y_up, x_right, y_down, weight, dist_new] = get_perp_line(x1=mouse_press_x, mouse_press_y, mouse_drag_x, mouse_drag_y, dist_new);
+      [x_left, y_up, x_right, y_down, weight] = get_perp_line(x1=mouse_press_x, mouse_press_y, mouse_drag_x, mouse_drag_y, dist_new);
 
       noFill();
       strokeWeight(4);
       let cur_weight = 1 + dist_new * 0.1;
-      stroke('rgba(' +red_perc +'%, ' +green_perc+ '%, '+ blue_perc+'%,' + Math.min(cur_weight / 70, 0.2) +')');
+      stroke('rgba(' +red_perc +'%, ' +green_perc+ '%, '+ blue_perc+'%,' + Math.min(cur_weight / 70, 0.4) +')');
+      //stroke('rgba(' +red_perc +'%, ' +green_perc+ '%, '+ blue_perc+'%,' + 1 +')');
   
       draw_bez(x_left, y_up, mouse_press_x, mouse_press_y, mouseX, mouseY);
       draw_bez(x_right, y_down, mouse_press_x, mouse_press_y, mouseX, mouseY);
@@ -224,7 +229,7 @@ function draw(){
           } 
           for (var i=0; i<lines.length; i++) {
               if (lines[i].opacity < 0.01) {
-                  console.log('removing ' + i + ' from ' + lines.length);
+                  // console.log('removing ' + i + ' from ' + lines.length);
                   lines[i].synth.triggerRelease();
                   var old_line = lines[i];
                   
@@ -271,20 +276,31 @@ function run_sound_loop(){
 
         let delta = 70;
 
-        if (random() < 0.60) {
+        let rval = random();
+        // console.log('rval: ' + rval);
+
+        if (rval < sound_loop_line_to_ripple_ratio) {
           x2new = x1new;
           y2new = y1new;
         }
         else{
           x2new = x1new - delta + floor(random() * delta * 2);
           y2new = y1new - delta + floor(random() * delta * 2);
+          
+          // mix up the ratio of lines to ripples
+          // if (rval > 0.90){
+          //   sound_loop_line_to_ripple_ratio = random() / 5 + 0.55;
+          //   console.log('ripple ratio:' + sound_loop_line_to_ripple_ratio);
+          // }
+
         }
     
         play_line(x1=x1new, y1=y1new, x2=x2new, y2=y2new);
-    
-        if (random() < auto_sound_loop.interval / 4){
-          auto_sound_loop.interval = random() * 5 + 0.2;
-          console.log("interval: " + auto_sound_loop.interval);
+        
+        let max_duration = 6;
+        if (random() < auto_sound_loop.interval / 5){
+          auto_sound_loop.interval = random() * 6 + 0.2;
+          // console.log("interval: " + auto_sound_loop.interval);
        }
     
       }
@@ -337,7 +353,7 @@ function get_perp_line(x1, y1, x2, y2, dist_new){
     var y_up = Math.min(window.innerHeight, y_left_delta + y1);
   }
   
-  return [x_left, y_up, x_right, y_down, weight, dist_new];
+  return [x_left, y_up, x_right, y_down, weight];
 
 }
 
@@ -393,16 +409,18 @@ function perp_line(x1, y1, x2, y2, dist_new=null){
   
     if (dist_new == null){
       dist_new = dist(x1, y1, x2, y2);
+      // console.log('dist_new calc: ' + dist_new);
+    }
+    else{
+      // console.log('dist_new given ' + dist_new +'  x1 ' + x1 + '  y1: '  +y1  + '  x2: ' + x2  +  '  y2: ' + y2);
     }
 
     [x_left, y_up, x_right, y_down, weight] = get_perp_line(x1, y1, x2, y2, dist_new);
 
-    console.log('x_left: ' + x_left);
+    // console.log('x_left: ' + x_left);
 
     var new_line = new Liney(x1=x_left, y1=y_up, x2=x_right, y2=y_down, weight=weight);
   
-
-
     if (dist_new == 0){
       new_line.freq_fac = 1.0;
       new_line.vol_ratio = 0.3;
@@ -451,7 +469,7 @@ function play_line(x1, y1, x2, y2, cur_dist=null){
     var new_line = perp_line(x1=x1, y1=y1, x2=x2, y2=y2, dist_new=cur_dist);
     var new_freq = new_ratio * base_freq * new_line.freq_fac;
 
-    console.log("Base: " + base_freq + "   new: " + new_freq +"   " + new_line.freq_fac);
+    // console.log("Base: " + base_freq + "   new: " + new_freq +"   " + new_line.freq_fac);
 
     // amp controls volume in this case, not the velocity
     new_line.synth.amp(new_line.vol_ratio);
@@ -494,6 +512,7 @@ function canvasReleased() {
     y2 = mouseY;
   }
   else{
+    // console.log('get from drag  ' + mouse_drag_x + "  " + mouse_press_x );
     x2 = mouse_drag_x;
     y2 = mouse_drag_y;
     mouse_drag_x = null;
@@ -505,6 +524,8 @@ function canvasReleased() {
   let cur_dist = dist(mouse_press_x, mouse_press_y, mouse_release_x, mouse_release_y);
 
   play_line(x1=mouse_press_x, y1=mouse_press_y, x2=x2, y2=y2, cur_dist=cur_dist);
+
+  mouse_drag_x = null;
 
 
 
