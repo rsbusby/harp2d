@@ -31,7 +31,9 @@ var reload_button;
 var instructions_opacity = 244;
 
 // Pentatonic scale ratios
-var pent_ratios = [5/4, 9/8, 3/2, 5/3, 2, 1];
+// var pent_ratios = [5/4, 9/8, 3/2, 5/3, 2, 1];
+var pent_ratios = [1, 9/8, 5/4, 3/2, 5/3, 2];
+
 
 function reset_page(){
 
@@ -460,11 +462,22 @@ function play_line(x1, y1, x2, y2, cur_dist=null){
 
     // console.log("test")
 
-    var new_ratio = pent_ratios[Math.floor(Math.random() * pent_ratios.length)];
+    // var new_ratio = pent_ratios[Math.floor(Math.random() * pent_ratios.length)];
+    // console.log(y1 / window.innerHeight);
+    // console.log(Math.floor((y1 / window.innerHeight) * pent_ratios.length));
+
 
     if (cur_dist == null){
       cur_dist = dist(x1, y1, x2, y2);
     }
+
+    let new_index = Math.floor((y1 / window.innerHeight) * pent_ratios.length);
+    let new_ratio = pent_ratios[new_index];
+    if (cur_dist != 0){
+      new_ratio = pent_ratios[pent_ratios.length - new_index - 1];
+    }
+
+    console.log(new_index + " " + pent_ratios.length - new_index - 1);
 
     var new_line = perp_line(x1=x1, y1=y1, x2=x2, y2=y2, dist_new=cur_dist);
     var new_freq = new_ratio * base_freq * new_line.freq_fac;
