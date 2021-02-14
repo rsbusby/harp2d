@@ -71,7 +71,7 @@ function reset_page(){
 
      auto_button.html("AutoPlay");
      auto_sound_loop.isPlaying = false;
-     auto_sound_loop.interval = random() * 1.8 + 0.2;
+     auto_sound_loop.interval = random() * 0.6 + 0.2;
 
      for (var i=0; i<lines.length; i++) {
        lines[i].synth.triggerRelease();
