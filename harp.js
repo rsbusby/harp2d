@@ -101,17 +101,17 @@ function setup(){
     textSize(24);
     auto_button = createButton('Auto Chime');
     auto_button.mouseClicked(auto_button_clicked);
-    auto_button.position(20, 200);
-    auto_button.size(110, 110);
-    auto_button.style('font-size', 20);
+    auto_button.position(20, 180);
+    auto_button.size(80, 80);
+    auto_button.style('font-size', 15);
 
     // auto_button.fontSize(20);
 
     reload_button = createButton('Restart');
     reload_button.mouseClicked(reload_button_clicked);
     reload_button.position(20, 60);
-    reload_button.size(110, 110);
-    reload_button.style('font-size', 20);
+    reload_button.size(80, 80);
+    reload_button.style('font-size', 15);
     // reload_button.style('text-shadow', '1px 1px #ffffff')
 
 
